@@ -7,20 +7,45 @@
     <script>
         function login() {
             const password = document.getElementById('password').value;
-            const storedHash = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // Reemplaza con el hash almacenado
 
             const shaObj = new jsSHA("SHA-256", "TEXT");
             shaObj.update(password);
             const hash = shaObj.getHash("HEX");
 
-            if (hash === storedHash) {
-                document.getElementById('login-form').style.display = 'none';
-                document.getElementById('camera-view').style.display = 'block';
-                document.getElementById('camera-image').src = 'https://1f7fb945e255-4279408151678968085.ngrok-free.app/mjpeg/1'; // Establece la URL de la imagen aquí
-            } else {
-                alert('Contraseña incorrecta');
-            }
+            const url = 'https://1f7fb945e255-4279408151678968085.ngrok-free.app/mjpeg/1'; // URL base sin cambios
+
+            fetch(url + '?k=' + hash)
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('camera-view').style.display = 'block';
+                    startMJPEGStream(url, hash);
+                } else {
+                    alert('Ingrese la contraseña correcta');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching the image:', error);
+                alert('Error al conectar con la cámara');
+            });
         }
+
+        function startMJPEGStream(url, hash) {
+            const iframe = document.createElement('iframe');
+            iframe.src = url + '?k=' + hash;
+            iframe.width = '100%';
+            iframe.height = '100%';
+            iframe.style.border = 'none';
+            document.getElementById('camera-view').appendChild(iframe);
+        }
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.getElementById('password').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+        });
     </script>
     <style>
         body {
@@ -50,6 +75,11 @@
         }
         #camera-view {
             display: none;
+            height: 1000px;
+            background-color: black;
+            padding: 2rem;
+            margin-top: -2rem;
+            margin-left: -1rem;
         }
     </style>
 </head>
@@ -61,10 +91,7 @@
         <button onclick="login()">Ingresar</button>
     </div>
     <div id="camera-view" style="display: none;">
-        <div style="height: 1000px; background-color: black; padding: 2rem; margin-top: -2rem; margin-left: -1rem;">
-            <h1 style="color: white;">Cámara de la casa</h1>
-            <img id="camera-image" src="" alt="Vista de la cámara">
-        </div>
+        <h1 style="color: white;">Cámara de la casa</h1>
     </div>
 </body>
 </html>
